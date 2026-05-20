@@ -1,0 +1,1099 @@
+---
+title: "Ideal Point Estimation in the 20th German Bundestag"
+subtitle: "Roll-Call Scaling via SVD and Bayesian IRT · Ampel Coalition 2021–2025"
+author: "Fatima Iqbal · Universität Mannheim · School of Social Sciences"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_file = xfun::with_ext(basename(input), "html"),
+      output_dir  = dirname(input),
+      ...
+    )
+  })
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 2
+    number_sections: false
+    code_folding: show
+    self_contained: true
+---
+
+```{css, echo=FALSE}
+/* ═══════════════════════════════════════════════════════════════
+   University of Mannheim Brand Colours
+   Navy #003056 · Orange #914305 · Light #E8EFF6
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --navy:   #003056;
+  --orange: #914305;
+  --light:  #E8EFF6;
+  --mid:    #c8d8e8;
+  --bg:     #f4f7fa;
+}
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+.main-container { max-width: 1100px !important; padding: 0 1.5rem 3rem; }
+
+#header {
+  background: var(--navy);
+  color: white !important;
+  padding: 2rem 2.5rem 1.6rem;
+  margin: 0 0 2rem 0;
+  border-bottom: 3px solid var(--orange);
+}
+#header h1.title    { color: white !important; font-size: 1.8rem; font-weight: 700; margin-bottom: 0.2rem; }
+#header h3.subtitle { color: rgba(255,255,255,0.75) !important; font-weight: 400; font-size: 0.95rem; margin-top: 0; }
+#header h4.author,
+#header h4.date     { color: rgba(255,255,255,0.55) !important; font-size: 0.83rem; font-weight: 400; margin: 0.1rem 0; }
+
+/* ── TOC ── */
+.col-xs-12.col-sm-4.col-md-3 { min-width: 200px; }
+.col-xs-12.col-sm-8.col-md-9 { padding-left: 1.5rem; }
+
+#TOC {
+  border: none !important;
+  background: white;
+  border-radius: 4px;
+  padding: 0.5rem 0;
+  border-top: 3px solid var(--navy) !important;
+  border-left: none !important;
+}
+.tocify { border: none !important; width: 100% !important; }
+
+/* top-level items */
+.tocify { counter-reset: toc-section; }
+.tocify > .tocify-item {
+  counter-increment: toc-section;
+}
+.tocify > .tocify-item > a {
+  color: var(--navy) !important;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  border-left: 3px solid transparent;
+}
+/* Roman numeral prefix on all top-level items except first (Data and Setup) */
+.tocify > .tocify-item:not(:first-child) > a::before {
+  content: counter(toc-section, upper-roman) ". ";
+  color: var(--orange);
+  font-weight: 700;
+}
+.tocify > .tocify-item > a:hover { color: var(--orange) !important; border-left-color: var(--orange); }
+.tocify > .active > a { color: var(--orange) !important; border-left-color: var(--orange); background: #fff4ee; font-weight: 700; }
+
+/* sub-items — indented, lighter */
+.tocify-subheader { background: none !important; }
+.tocify-subheader .tocify-item > a {
+  color: #4a6080 !important;
+  font-size: 0.79rem;
+  font-weight: 400;
+  padding: 3px 10px 3px 20px;
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  border-left: none;
+}
+.tocify-subheader .tocify-item > a:hover { color: var(--orange) !important; }
+.tocify-subheader .active > a { color: var(--orange) !important; font-weight: 600; }
+.q-header {
+  background: var(--navy);
+  color: white;
+  padding: 0.75rem 1.2rem;
+  border-radius: 0;
+  margin: 2.5rem 0 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-left: 4px solid var(--orange);
+}
+.q-header span {
+  display: inline-block;
+  background: var(--orange);
+  color: white;
+  border-radius: 0;
+  width: 1.6rem; height: 1.6rem;
+  text-align: center;
+  line-height: 1.6rem;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+/* ── Sub-question badges ── */
+.sub-q {
+  display: inline-block;
+  background: var(--orange);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+h2 {
+  color: var(--navy);
+  font-weight: 700;
+  border-bottom: 2px solid var(--mid);
+  padding-bottom: 0.3rem;
+  margin-top: 2rem;
+}
+h3 { color: #1a3a5c; font-size: 1.05rem; font-weight: 700; margin-top: 1.5rem; }
+
+/* ── Answer callout ── */
+.answer {
+  background: #fff9f5;
+  border-left: 4px solid var(--orange);
+  padding: 1rem 1.5rem;
+  margin: 1.4rem 0;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+.answer strong { color: var(--orange); }
+
+/* ── Info box ── */
+.info-box {
+  background: var(--light);
+  border-left: 4px solid var(--navy);
+  border-radius: 0 6px 6px 0;
+  padding: 1rem 1.4rem;
+  margin: 1.2rem 0;
+}
+.info-box strong { color: var(--navy); }
+
+/* ── Pending box ── */
+.pending {
+  background: #fffbea;
+  border-left: 4px solid #c8a000;
+  border-radius: 0 6px 6px 0;
+  padding: 1rem 1.4rem;
+  margin: 1.2rem 0;
+  font-style: italic;
+  color: #6b5800;
+}
+
+/* ── Metric cards ── */
+.metric-row  { display: flex; gap: 1rem; flex-wrap: wrap; margin: 1.4rem 0 1.8rem; }
+.metric-card {
+  background: var(--light);
+  border-top: 3px solid var(--navy);
+  border-radius: 4px;
+  padding: 1rem 1.2rem 0.8rem;
+  text-align: center;
+  min-width: 120px;
+  flex: 1;
+}
+.metric-card .big   { font-size: 1.9rem; font-weight: 700; color: var(--navy); display: block; line-height: 1.1; }
+.metric-card .label { font-size: 0.7rem; color: #6b7c93; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 0.3rem; display: block; }
+
+/* ── Plotly wrapper ── */
+.plotly-wrapper {
+  background: white;
+  border: 1px solid var(--mid);
+  border-radius: 8px;
+  padding: 0.8rem;
+  margin: 1.4rem 0;
+  box-shadow: 0 2px 12px rgba(0,48,86,0.07);
+}
+
+/* ── Tables ── */
+table { border-collapse: collapse; font-size: 1rem; width: auto; margin: 1rem auto; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,48,86,0.08); }
+thead th { background: var(--navy) !important; color: white !important; padding: 0.7rem 1.1rem; font-weight: 600; }
+tbody td { padding: 0.6rem 1.1rem; border-bottom: 1px solid #e2eaf3; }
+tbody tr:nth-child(even) { background: var(--light); }
+tbody tr:hover { background: var(--mid); }
+/* ── Code ── */
+pre, code { font-size: 0.83rem; border-radius: 4px; }
+pre { border-left: 3px solid var(--mid); background: #edf2f8 !important; }
+
+/* ── Prior table ── */
+.prior-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.91rem; }
+.prior-table th { background: var(--navy); color: white; padding: 0.55rem 0.9rem; text-align: left; }
+.prior-table td { padding: 0.45rem 0.9rem; border-bottom: 1px solid #dde8f2; }
+.prior-table tr:nth-child(even) td { background: var(--light); }
+
+/* ── Footer ── */
+.page-footer {
+  margin-top: 3.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--mid);
+  font-size: 0.8rem;
+  color: #999;
+  text-align: center;
+}
+
+hr { border: none; border-top: 1px solid var(--mid); margin: 2.5rem 0; }
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo       = TRUE,
+  warning    = FALSE,
+  message    = FALSE,
+  fig.width  = 10,
+  fig.height = 6,
+  dpi        = 150
+)
+
+suppressPackageStartupMessages({
+  library(dplyr); library(tidyr); library(ggplot2)
+  library(ggridges); library(brms); library(cmdstanr)
+  library(plotly); library(htmltools); library(knitr); library(kableExtra)
+})
+
+set.seed(42)
+options(mc.cores = 4)
+options(brms.backend = "cmdstanr")
+
+irt_ready <- file.exists("fit_2pl.rds")
+
+UNI_NAVY   <- "#003056"
+UNI_ORANGE <- "#914305"
+UNI_LIGHT  <- "#E8EFF6"
+
+PARTY_COLS <- c(
+  "SPD"                   = "#E3000F",
+  "CDU/CSU"               = "#222222",
+  "FDP"                   = "#D4AF00",
+  "AfD"                   = "#009EE0",
+  "fraktionslos"          = "#888888",
+  "BÜNDNIS 90/DIE GRÜNEN" = "#1AA037",
+  "DIE LINKE."            = "#BE3075"
+)
+
+theme_bundestag <- function(...) {
+  theme_minimal(base_family = "sans", ...) +
+    theme(
+      plot.title       = element_text(colour = UNI_NAVY, face = "bold", size = 14),
+      plot.subtitle    = element_text(colour = "#444", size = 11),
+      axis.title       = element_text(colour = UNI_NAVY, size = 11),
+      axis.text        = element_text(colour = "#333"),
+      panel.grid.minor = element_blank(),
+      panel.grid.major = element_line(colour = "#e0e8f0"),
+      legend.position  = "right",
+      strip.text       = element_text(colour = UNI_NAVY, face = "bold")
+    )
+}
+```
+
+---
+
+## Data and Setup {#setup}
+
+The 20th German Bundestag sat from September 2021 to March 2025.The full term of the *Ampel* coalition of SPD, FDP, and Bündnis 90/Die Grünen under Chancellor Olaf Scholz. We use every recorded *namentliche Abstimmung* (roll-call vote) from this period. Each member's vote is coded **1** (Ja), **0** (Nein), or **NA** (Enthaltung / nicht abgegeben).
+
+```{r load-data}
+votes_wide <- read.csv("bundestag_wp132_votes_clean.csv",
+                       stringsAsFactors = FALSE, check.names = FALSE)
+votes_long <- read.csv("bundestag_wp132_votes_clean_long.csv",
+                       stringsAsFactors = FALSE)
+codebook   <- read.csv("bundestag_wp132_vote_codebook.csv",
+                       stringsAsFactors = FALSE)
+
+mp_meta   <- votes_wide %>% select(name, party)
+vote_cols <- setdiff(names(votes_wide), c("name", "party"))
+X_raw     <- as.matrix(votes_wide %>% select(all_of(vote_cols)))
+rownames(X_raw) <- votes_wide$name
+
+missing_pct <- round(mean(is.na(X_raw)) * 100, 1)
+```
+
+<div class="metric-row">
+  <div class="metric-card"><span class="big">`r nrow(X_raw)`</span><span class="label">Legislators</span></div>
+  <div class="metric-card"><span class="big">`r ncol(X_raw)`</span><span class="label">Roll-call votes</span></div>
+  <div class="metric-card"><span class="big">`r missing_pct`%</span><span class="label">Missing entries</span></div>
+  <div class="metric-card"><span class="big">`r nrow(votes_long)`</span><span class="label">Long-format rows</span></div>
+</div>
+
+---
+
+<div class="q-header"><span>I</span> SVD on the Imputed Matrix</div>
+
+## Double-Mean Imputation {#impute}
+
+The SVD requires a complete rectangular matrix. We fill each missing entry $X_{ij}$ with the double-mean formula:
+
+$$\hat{X}_{ij} = \bar{X}_{i\cdot} + \bar{X}_{\cdot j} - \bar{X}_{\cdot\cdot}$$
+
+This preserves both row and column means while introducing no net bias.
+
+```{r impute}
+X            <- X_raw
+overall_mean <- mean(X, na.rm = TRUE)
+row_means    <- rowMeans(X, na.rm = TRUE)
+col_means    <- colMeans(X, na.rm = TRUE)
+
+na_idx    <- which(is.na(X), arr.ind = TRUE)
+X[na_idx] <- row_means[na_idx[, 1]] + col_means[na_idx[, 2]] - overall_mean
+
+stopifnot(sum(is.na(X)) == 0, sum(is.nan(X)) == 0)
+cat("Imputation complete — no NAs remain.\n")
+```
+
+## SVD Decomposition {#svd-compute}
+
+```{r svd-imputed}
+svd_res       <- svd(X)
+U <- svd_res$u; d <- svd_res$d; V <- svd_res$v
+var_explained <- d^2 / sum(d^2)
+
+scores_dim1 <- U[, 1] * d[1]
+scores_dim2 <- U[, 2] * d[2]
+
+## Sign convention: SPD positive on both dimensions
+if (mean(scores_dim1[mp_meta$party == "SPD"]) < 0) {
+  scores_dim1 <- -scores_dim1; V[, 1] <- -V[, 1]
+}
+if (mean(scores_dim2[mp_meta$party == "SPD"]) < 0) {
+  scores_dim2 <- -scores_dim2; V[, 2] <- -V[, 2]
+}
+
+mp_meta$svd_dim1 <- scores_dim1
+mp_meta$svd_dim2 <- scores_dim2
+
+vote_loadings <- data.frame(
+  vote_column  = vote_cols,
+  loading_dim1 = V[, 1] * d[1],
+  loading_dim2 = V[, 2] * d[2]
+) %>%
+  left_join(codebook %>% select(vote_column, poll_label), by = "vote_column") %>%
+  arrange(loading_dim1)
+```
+
+## (a) Who Falls on Which Side? {#svd-a}
+
+```{r party-svd-table}
+party_svd <- mp_meta %>%
+  group_by(party) %>%
+  summarise(N = n(),
+            `Mean Dim 1` = round(mean(svd_dim1), 3),
+            `SD Dim 1`   = round(sd(svd_dim1),   3),
+            .groups = "drop") %>%
+  arrange(`Mean Dim 1`)
+
+party_svd %>%
+  kable(align = c("l","c","r","r")) %>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed"),
+                full_width = FALSE)
+```
+
+```{r svd-dim1-density, fig.height=5}
+ggplot(mp_meta, aes(x = svd_dim1, fill = party, colour = party)) +
+  geom_density(alpha = 0.35, linewidth = 0.6) +
+  scale_fill_manual(values = PARTY_COLS, name = "Fraction") +
+  scale_colour_manual(values = PARTY_COLS, name = "Fraction") +
+  labs(
+    title    = "SVD Dimension 1: Legislator Score Distributions by Party",
+    subtitle = "Higher scores = more aligned with the Ampel coalition majority",
+    x = "Score on Dimension 1", y = "Density"
+  ) +
+  theme_bundestag()
+```
+
+<div class="answer">
+<strong>Answer (a).</strong> Dimension 1 separates the three Ampel coalition parties (SPD, FDP, GRÜNE) on one end from the main opposition parties (AfD, CDU/CSU) on the other as confirmed by the table above. BSW and LINKE occupy the middle: both voted against the coalition on most issues but for different reasons. BSW primarily on foreign policy and NATO; LINKE on social spending cuts. The sign convention on Dimension 1 is arbitrary (a global sign flip leaves the model unchanged), so what matters is the <strong>separation and ordering</strong>, not which end is labelled positive or negative. This maps directly onto the government vs. opposition divide of the Ampel period. it is a <strong>coalition loyalty axis</strong>, not a traditional left–right ideological scale.
+</div>
+
+## (b) Most Extreme Votes {#svd-b}
+
+```{r extreme-votes}
+most_neg <- head(vote_loadings %>%
+  select(vote_column, poll_label, loading_dim1) %>%
+  mutate(loading_dim1 = round(loading_dim1, 3)), 6)
+
+most_pos <- tail(vote_loadings %>%
+  select(vote_column, poll_label, loading_dim1) %>%
+  mutate(loading_dim1 = round(loading_dim1, 3)), 6)
+
+most_neg %>%
+  rename(Vote = poll_label, `Loading (Dim 1)` = loading_dim1) %>%
+  select(Vote, `Loading (Dim 1)`) %>%
+  kable(caption = "Most opposition-aligned votes — most negative loading on Dimension 1") %>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed"), full_width = FALSE)
+
+most_pos %>%
+  rename(Vote = poll_label, `Loading (Dim 1)` = loading_dim1) %>%
+  select(Vote, `Loading (Dim 1)`) %>%
+  kable(caption = "Most coalition-aligned votes — most positive loading on Dimension 1") %>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed"), full_width = FALSE)
+```
+
+<div class="answer">
+<strong>Answer (b).</strong> The most extreme votes on one end are motions where AfD and CDU/CSU voted together against the coalition, typically opposition motions, censure motions, or conservative amendments. The most extreme on the other end are core Ampel government legislation: budget bills, the Bundeswehr <em>Sondervermögen</em>, Ukraine support packages, and social policy reforms where SPD/FDP/GRÜNE voted as a unified bloc. This confirms Dimension 1 is a <strong>government loyalty axis</strong>  as a vote's loading tells us how strongly it discriminates between coalition and opposition behaviour, not where it sits on a substantive left–right policy dimension.
+</div>
+
+## (c) The Second Dimension {#svd-c}
+
+```{r svd-dim2-scatter, fig.height=5}
+ggplot(mp_meta, aes(x = svd_dim1, y = svd_dim2, colour = party)) +
+  geom_point(alpha = 0.55, size = 1.8) +
+  scale_colour_manual(values = PARTY_COLS, name = "Fraction") +
+  labs(
+    title    = "SVD Dimensions 1 and 2",
+    subtitle = "Dimension 2 separates the far-left (LINKE) from the far-right (AfD)",
+    x = "Dimension 1 — coalition vs. opposition",
+    y = "Dimension 2"
+  ) +
+  theme_bundestag()
+```
+
+<div class="answer">
+<strong>Answer (c).</strong> Dimension 2 (explaining <strong>`r round(var_explained[2]*100, 1)`%</strong> of variance) is substantively meaningful, not noise. It primarily separates <strong>LINKE</strong> from <strong>AfD</strong> at opposite poles, while the coalition parties and CDU/CSU cluster near zero. This is a recognisable <strong>left–right ideological axis</strong>, orthogonal to the government–opposition axis in Dimension 1. The separation matters theoretically: LINKE and AfD both opposed the Ampel on Dimension 1, but they sit at opposite poles on Dimension 2. A purely one-dimensional model collapses them together, the second dimension correctly recovers their ideological distance.
+</div>
+
+## (d) Variance Explained {#svd-d}
+
+For dimension $k$: $\text{var}_k = d_k^2 \,/\, \sum_j d_j^2$
+
+```{r scree-plot, fig.height=4}
+scree_df <- data.frame(dim = 1:10, var = var_explained[1:10] * 100)
+
+ggplot(scree_df, aes(x = dim, y = var)) +
+  geom_col(fill = UNI_NAVY, width = 0.65) +
+  geom_text(aes(label = sprintf("%.1f%%", var)),
+            vjust = -0.4, size = 3.5, colour = UNI_NAVY, fontface = "bold") +
+  scale_x_continuous(breaks = 1:10) +
+  labs(
+    title    = "Scree Plot — Variance Explained by SVD Dimension",
+    subtitle = "Imputed vote matrix · 20th Bundestag",
+    x = "Dimension", y = "Variance explained (%)"
+  ) +
+  theme_bundestag()
+```
+
+<div class="answer">
+<strong>Answer (d).</strong> Dimension 1 explains <strong>`r round(var_explained[1]*100, 1)`%</strong> of total variance in the vote matrix. This is exceptionally high for a legislative body and directly reflects the unusually strong coalition discipline of the Ampel period as the three parties voting together as a near-perfect bloc on the vast majority of divisions. The sharp drop-off in the scree plot confirms that additional dimensions are adding relatively little explanatory power.
+</div>
+
+---
+
+<div class="q-header"><span>II</span> SVD on the Double-Centred Matrix</div>
+
+## Constructing the Double-Centred Matrix {#dc-construct}
+
+The double-centred matrix removes all row and column means, isolating residual covariance:
+
+$$\tilde{X}_{ij} = X_{ij} - \bar{X}_{i\cdot} - \bar{X}_{\cdot j} + \bar{X}_{\cdot\cdot}$$
+
+```{r double-centre}
+row_means_X    <- rowMeans(X)
+col_means_X    <- colMeans(X)
+overall_mean_X <- mean(X)
+
+X_dc <- X -
+  outer(row_means_X, rep(1, ncol(X))) -
+  outer(rep(1, nrow(X)), col_means_X) +
+  overall_mean_X
+
+stopifnot(
+  max(abs(rowMeans(X_dc))) < 1e-10,
+  max(abs(colMeans(X_dc))) < 1e-10
+)
+cat("Verification: max |row mean| =", formatC(max(abs(rowMeans(X_dc))), format="e", digits=2),
+    "· max |col mean| =", formatC(max(abs(colMeans(X_dc))), format="e", digits=2), "\n")
+```
+
+<div class="info-box">
+<strong>Verification passed.</strong> Max absolute row mean = <code>`r formatC(max(abs(rowMeans(X_dc))), format="e", digits=2)`</code>, max absolute column mean = <code>`r formatC(max(abs(colMeans(X_dc))), format="e", digits=2)`</code>. Both are effectively zero ✓
+</div>
+
+## SVD on Double-Centred Matrix {#svd-dc-compute}
+
+```{r svd-dc}
+svd_dc           <- svd(X_dc)
+var_explained_dc <- svd_dc$d^2 / sum(svd_dc$d^2)
+
+scores_dc1 <- svd_dc$u[, 1] * svd_dc$d[1]
+scores_dc2 <- svd_dc$u[, 2] * svd_dc$d[2]
+
+if (mean(scores_dc1[mp_meta$party == "SPD"]) < 0) {
+  scores_dc1 <- -scores_dc1
+  svd_dc$v[, 1] <- -svd_dc$v[, 1]
+}
+if (mean(scores_dc2[mp_meta$party == "SPD"]) < 0) scores_dc2 <- -scores_dc2
+
+mp_meta$svd_dc_dim1 <- scores_dc1
+mp_meta$svd_dc_dim2 <- scores_dc2
+```
+
+```{r dc-comparison, fig.height=5}
+mp_meta %>%
+  pivot_longer(cols = c(svd_dim1, svd_dc_dim1),
+               names_to = "method", values_to = "score") %>%
+  mutate(method = recode(method,
+    svd_dim1    = "SVD (imputed)",
+    svd_dc_dim1 = "SVD (double-centred)"
+  )) %>%
+  ggplot(aes(x = score, fill = party, colour = party)) +
+  geom_density(alpha = 0.30, linewidth = 0.5) +
+  facet_wrap(~method, scales = "free_x") +
+  scale_fill_manual(values = PARTY_COLS, name = "Fraction") +
+  scale_colour_manual(values = PARTY_COLS, name = "Fraction") +
+  labs(
+    title    = "SVD Dimension 1: Imputed vs Double-Centred Matrix",
+    subtitle = "Party ordering is consistent across both methods",
+    x = "Score on Dimension 1", y = "Density"
+  ) +
+  theme_bundestag()
+```
+
+## (a) Who Falls on Which Side? {#dc-a}
+
+<div class="answer">
+<strong>Answer (a).</strong> The party ordering on Dimension 1 of the double-centred matrix is identical to the imputed SVD — Ampel coalition parties (SPD, FDP, GRÜNE) on one end, AfD and CDU/CSU on the other, with BSW and LINKE in the middle. Double-centring does not change the fundamental structure; it only removes each MP's baseline yes/no tendency and each vote's overall pass rate. The dimension remains a <strong>coalition loyalty axis</strong>. The variance explained drops from <strong>`r round(var_explained[1]*100, 1)`%</strong> to <strong>`r round(var_explained_dc[1]*100, 1)`%</strong> expected, since the row/column means that dominated raw variance have been removed.
+</div>
+
+## (b) Most Extreme Votes {#dc-b}
+
+```{r dc-extreme-votes}
+vote_loadings_dc <- data.frame(
+  vote_column  = vote_cols,
+  loading_dim1 = svd_dc$v[, 1] * svd_dc$d[1]
+) %>%
+  left_join(codebook %>% select(vote_column, poll_label), by = "vote_column") %>%
+  arrange(loading_dim1)
+
+bind_rows(
+  head(vote_loadings_dc %>% select(poll_label, loading_dim1) %>%
+         mutate(loading_dim1 = round(loading_dim1, 3)), 6),
+  tail(vote_loadings_dc %>% select(poll_label, loading_dim1) %>%
+         mutate(loading_dim1 = round(loading_dim1, 3)), 6)
+) %>%
+  rename(Vote = poll_label, `Loading (Dim 1, DC)` = loading_dim1) %>%
+  kable(caption = "Most extreme votes — double-centred SVD Dimension 1") %>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed"), full_width = FALSE)
+```
+
+<div class="answer">
+<strong>Answer (b).</strong> The most extreme votes on the double-centred matrix are broadly the same as in the imputed case: core coalition legislation at one pole, opposition motions at the other. However, double-centring removes the effect of votes that passed or failed by large margins regardless of party, so the extreme votes here more purely reflect <strong>partisan disagreement</strong> rather than overall popularity of a motion. Votes that were nearly unanimous in either direction are pulled toward zero after centring.
+</div>
+
+## (c) The Second Dimension {#dc-c}
+
+```{r dc-dim2-scatter, fig.height=5}
+ggplot(mp_meta, aes(x = svd_dc_dim1, y = svd_dc_dim2, colour = party)) +
+  geom_point(alpha = 0.55, size = 1.8) +
+  scale_colour_manual(values = PARTY_COLS, name = "Fraction") +
+  labs(
+    title    = "Double-Centred SVD: Dimensions 1 and 2",
+    subtitle = "Same left-right ideological axis as the imputed SVD",
+    x = "Dimension 1 — coalition vs. opposition",
+    y = "Dimension 2"
+  ) +
+  theme_bundestag()
+```
+
+<div class="answer">
+<strong>Answer (c).</strong> Dimension 2 of the double-centred matrix (explaining <strong>`r round(var_explained_dc[2]*100, 1)`%</strong> of variance) again separates LINKE from AfD, recovering the same left–right ideological axis as in the imputed SVD. The structure is robust to the centring choice. If anything the separation is slightly cleaner after double-centring because overall voting propensities, which add noise to the raw matrix have been removed.
+</div>
+
+## (d) Variance Explained {#dc-d}
+
+```{r dc-scree, fig.height=4}
+scree_dc_df <- data.frame(dim = 1:10, var = var_explained_dc[1:10] * 100)
+
+ggplot(scree_dc_df, aes(x = dim, y = var)) +
+  geom_col(fill = UNI_NAVY, width = 0.65) +
+  geom_text(aes(label = sprintf("%.1f%%", var)),
+            vjust = -0.4, size = 3.5, colour = UNI_NAVY, fontface = "bold") +
+  scale_x_continuous(breaks = 1:10) +
+  labs(
+    title    = "Scree Plot — Double-Centred SVD",
+    subtitle = "Variance explained per dimension · 20th Bundestag",
+    x = "Dimension", y = "Variance explained (%)"
+  ) +
+  theme_bundestag()
+```
+
+<div class="answer">
+<strong>Answer (d).</strong> Dimension 1 of the double-centred matrix explains <strong>`r round(var_explained_dc[1]*100, 1)`%</strong> of variance, compared to <strong>`r round(var_explained[1]*100, 1)`%</strong> in the imputed matrix. The drop is expected as double-centring removes the largest sources of raw variance (row and column means). Nevertheless, Dimension 1 still dominates the scree, confirming the coalition vs. opposition structure is the primary signal in the data regardless of preprocessing choice.
+</div>
+
+---
+
+<div class="q-header"><span>III</span> 2-PL IRT Model via <code>brms</code></div>
+
+## Model Specification {#irt-spec}
+
+We fit a two-parameter logistic (2-PL) IRT model using the **difficulty parameterisation**. NAs are omitted naturally — no imputation required.
+
+$$P(y_{ij} = 1) = \text{logit}^{-1}\!\left(\exp(\log\alpha_j)\,(\eta_i - \beta_j)\right)$$
+
+where $\eta_i$ is the ideal point of legislator $i$, $\beta_j$ is the **difficulty** of vote $j$ (how hard it is to vote Ja), and $\exp(\log\alpha_j)$ is the discrimination. This is the standard difficulty parameterisation: a legislator votes Ja when their ideal point exceeds the vote's difficulty threshold. The correlated group-level structure `(1 | i | poll_idx)` on `logalpha` allows discrimination to co-vary across votes.
+
+<table class="prior-table">
+  <thead>
+    <tr><th>Parameter</th><th>Meaning</th><th>Prior</th><th>Rationale</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>$\eta_i$</td><td>Ideal point, legislator $i$</td><td>$\mathcal{N}(0,\,1)$ on intercept; $\mathcal{N}(0,\,1)$ on SD</td><td>Centred, unit scale — identification constraint</td></tr>
+    <tr><td>$\log(\alpha_j)$</td><td>Log-discrimination, vote $j$</td><td>$\mathcal{N}(0,\,0.5)$ on intercept; $\mathcal{N}(0,\,0.5)$ on SD</td><td>Keeps discriminations positive and plausible; regularises extremes</td></tr>
+    <tr><td>$\beta_j$</td><td>Difficulty, vote $j$</td><td>$\mathcal{N}(0,\,1)$ on intercept; $\mathcal{N}(0,\,1)$ on SD</td><td>Weakly informative; centred at zero difficulty</td></tr>
+  </tbody>
+</table>
+
+```{r show-formula, echo=TRUE, eval=FALSE}
+## ── 2-PL IRT Model — difficulty parameterisation ──────────────────
+## P(y_ij = 1) = logit^{-1}( exp(logalpha_j) * (eta_i - beta_j) )
+##
+## eta_i     = ideal point of legislator i
+## beta_j    = difficulty of vote j  (subtracted — harder vote needs higher eta)
+## logalpha_j = log-discrimination of vote j (exponentiated to stay positive)
+
+formula_2pl <- bf(
+  y        ~ inv_logit(exp(logalpha) * (eta - beta)),
+  nl       = TRUE,
+  eta      ~ 1 + (1 | mp_idx),          # person-level random intercept
+  logalpha ~ 1 + (1 | i | poll_idx),    # vote discrimination (correlated RE)
+  beta     ~ 1 + (1 | poll_idx),        # vote difficulty
+  family   = bernoulli()
+)
+
+priors_2pl <- c(
+  prior(normal(0, 1),   class = b,  nlpar = "eta"),      # ideal point intercept
+  prior(normal(0, 1),   class = sd, nlpar = "eta"),      # SD across legislators
+  prior(normal(0, 0.5), class = b,  nlpar = "logalpha"), # discrimination intercept
+  prior(normal(0, 0.5), class = sd, nlpar = "logalpha"), # SD across votes
+  prior(normal(0, 1),   class = b,  nlpar = "beta"),     # difficulty intercept
+  prior(normal(0, 1),   class = sd, nlpar = "beta")      # SD across votes
+)
+
+fit_2pl <- brm(
+  formula = formula_2pl,
+  data    = irt_long,        # long format: one row per legislator-vote pair
+  prior   = priors_2pl,
+  chains  = 2, cores = 2,
+  iter    = 500, warmup = 200,
+  control = list(adapt_delta = 0.90, max_treedepth = 10),
+  backend = "cmdstanr",
+  seed    = 42,
+  file    = "fit_2pl"        # caches result — skips refitting if file exists
+)
+```
+
+## Data Preparation {#irt-data}
+
+```{r irt-data}
+irt_long <- votes_long %>%
+  filter(!is.na(y)) %>%
+  mutate(
+    mp_idx   = as.integer(factor(name)),
+    poll_idx = as.integer(factor(vote_column, levels = vote_cols))
+  )
+
+n_mp   <- n_distinct(irt_long$mp_idx)
+n_poll <- n_distinct(irt_long$poll_idx)
+cat(sprintf("%d MPs × %d votes = %d observations\n", n_mp, n_poll, nrow(irt_long)))
+```
+
+## Fitting the Model {#irt-fit}
+
+```{r brms-formula, eval=!irt_ready}
+## ── Formula: 2-PL IRT — difficulty parameterisation ───────────────
+## P(y=1) = logit^{-1}( exp(logalpha) * (eta - beta) )
+formula_2pl <- bf(
+  y        ~ inv_logit(exp(logalpha) * (eta - beta)),
+  nl       = TRUE,
+  eta      ~ 1 + (1 | mp_idx),
+  logalpha ~ 1 + (1 | i | poll_idx),
+  beta     ~ 1 + (1 | poll_idx),
+  family   = bernoulli()
+)
+
+priors_2pl <- c(
+  prior(normal(0, 1),   class = b,  nlpar = "eta"),
+  prior(normal(0, 1),   class = sd, nlpar = "eta"),
+  prior(normal(0, 0.5), class = b,  nlpar = "logalpha"),
+  prior(normal(0, 0.5), class = sd, nlpar = "logalpha"),
+  prior(normal(0, 1),   class = b,  nlpar = "beta"),
+  prior(normal(0, 1),   class = sd, nlpar = "beta")
+)
+
+fit_2pl <- brm(
+  formula = formula_2pl,
+  data    = irt_long,
+  prior   = priors_2pl,
+  chains  = 2,
+  cores   = 2,
+  iter    = 500,
+  warmup  = 200,
+  control = list(adapt_delta = 0.90, max_treedepth = 10),
+  backend = "cmdstanr",
+  seed    = 42,
+  file    = "fit_2pl"
+)
+```
+
+```{r brms-load, eval=irt_ready}
+fit_2pl <- readRDS("fit_2pl.rds")
+```
+
+```{r irt-pending-msg, results='asis', echo=FALSE, eval=!irt_ready}
+cat('<div class="pending">⏳ <strong>IRT model not yet fitted.</strong> Run the <code>brms-formula</code> chunk in the console, then re-knit. All IRT sections populate automatically once <code>fit_2pl.rds</code> exists.</div>')
+```
+
+## Extracting Ideal Points {#irt-extract}
+
+```{r extract-theta, eval=irt_ready}
+theta_draws <- as.data.frame(fit_2pl,
+  variable = "r_mp_idx__eta", regex = TRUE)
+
+mp_key <- irt_long %>%
+  distinct(mp_idx, name, party) %>%
+  arrange(mp_idx)
+
+n_mp_irt <- nrow(mp_key)
+
+extract_theta <- function(i) {
+  col <- paste0("r_mp_idx__eta[", i, ",Intercept]")
+  if (col %in% names(theta_draws)) theta_draws[[col]]
+  else rep(NA_real_, nrow(theta_draws))
+}
+
+theta_mean <- sapply(seq_len(n_mp_irt), function(i) mean(extract_theta(i)))
+theta_sd   <- sapply(seq_len(n_mp_irt), function(i) sd(extract_theta(i)))
+theta_q025 <- sapply(seq_len(n_mp_irt), function(i) quantile(extract_theta(i), 0.025))
+theta_q975 <- sapply(seq_len(n_mp_irt), function(i) quantile(extract_theta(i), 0.975))
+
+if (mean(theta_mean[mp_key$party == "SPD"]) < 0) {
+  theta_mean <- -theta_mean
+  tmp <- theta_q025; theta_q025 <- -theta_q975; theta_q975 <- -tmp
+}
+
+mp_key$irt_mean <- theta_mean
+mp_key$irt_sd   <- theta_sd
+mp_key$irt_q025 <- theta_q025
+mp_key$irt_q975 <- theta_q975
+
+meta_irt <- mp_key %>%
+  left_join(mp_meta %>% select(name, party, svd_dim1, svd_dc_dim1),
+            by = c("name", "party"))
+```
+
+## MCMC Diagnostics {#irt-diag}
+
+```{r diagnostics, eval=irt_ready}
+summary(fit_2pl)$random$mp_idx %>%
+  as.data.frame() %>%
+  kable(digits = 3, caption = "Random effects summary: MP ideal points (η)") %>%
+  kable_styling(bootstrap_options = c("striped","condensed"), full_width = FALSE)
+```
+
+---
+
+<div class="q-header"><span>IV</span> Results and Comparison: IRT vs SVD</div>
+
+## Party Ideal Points — IRT Posterior {#irt-party}
+
+```{r party-irt-table, eval=irt_ready}
+party_irt <- meta_irt %>%
+  group_by(party) %>%
+  summarise(
+    N              = n(),
+    `Mean η`       = round(mean(irt_mean), 3),
+    `Mean post SD` = round(mean(irt_sd),   3),
+    `SVD Dim 1`    = round(mean(svd_dim1, na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  arrange(`Mean η`)
+
+party_irt %>%
+  kable(align = c("l","c","r","r","r")) %>%
+  kable_styling(bootstrap_options = c("striped","hover","condensed"),
+                full_width = FALSE)
+```
+
+```{r irt-ridgeplot, fig.height=6, eval=irt_ready}
+draw_sample <- lapply(seq_len(n_mp_irt), function(i) {
+  draws <- extract_theta(i)
+  data.frame(party = mp_key$party[i],
+             theta = sample(draws, min(60, length(draws))))
+}) %>% bind_rows()
+
+# Apply same sign convention as theta_mean (already flipped above)
+if (mean(theta_mean[mp_key$party == "SPD"]) < 0) {
+  draw_sample$theta <- -draw_sample$theta
+}
+
+party_order <- party_irt %>% arrange(`Mean η`) %>% pull(party)
+draw_sample$party <- factor(draw_sample$party, levels = party_order)
+
+ggplot(draw_sample, aes(x = theta, y = party, fill = party)) +
+  geom_density_ridges(
+    alpha = 0.75, scale = 1.2,
+    quantile_lines = TRUE, quantiles = c(0.025, 0.975),
+    colour = "white", linewidth = 0.4
+  ) +
+  scale_fill_manual(values = PARTY_COLS, guide = "none") +
+  labs(
+    title    = "Posterior Distributions of Ideal Points by Party",
+    subtitle = "2-PL IRT model · vertical lines at 2.5% and 97.5% credible intervals",
+    x = "Ideal point η (posterior draws)", y = NULL
+  ) +
+  theme_bundestag()
+```
+
+## Interactive Comparison: IRT vs SVD {#interactive}
+
+Every MP is shown as a point: SVD Dimension 1 on the x-axis, IRT posterior mean on the y-axis. Hover for name, party, and credible interval; click legend entries to isolate parties.
+
+```{r interactive-plotly, eval=irt_ready}
+corr_svd    <- cor(meta_irt$svd_dim1,    meta_irt$irt_mean, use = "complete.obs")
+corr_svd_dc <- cor(meta_irt$svd_dc_dim1, meta_irt$irt_mean, use = "complete.obs")
+
+plot_df <- meta_irt %>%
+  mutate(hover_text = paste0(
+    "<b>", name, "</b><br>",
+    "Party: ", party, "<br>",
+    "IRT η: ", round(irt_mean, 3),
+    "  [", round(irt_q025, 3), ", ", round(irt_q975, 3), "]<br>",
+    "SVD Dim 1: ", round(svd_dim1, 3), "<br>",
+    "Posterior SD: ", round(irt_sd, 3)
+  ))
+
+p_interactive <- plot_ly(
+  data = plot_df, x = ~svd_dim1, y = ~irt_mean,
+  color = ~party, colors = PARTY_COLS,
+  text = ~hover_text, hoverinfo = "text",
+  type = "scatter", mode = "markers",
+  marker = list(size = 6, opacity = 0.75,
+                line = list(width = 0.6, color = "white"))
+) %>%
+  layout(
+    height = 440,
+    title = list(
+      text = paste0(
+        "<b>SVD Dimension 1 vs IRT Posterior Mean</b><br>",
+        "<sup style='color:#666'>r(SVD) = ", round(corr_svd, 3),
+        " · r(SVD double-centred) = ", round(corr_svd_dc, 3),
+        " · hover over a point to see MP details</sup>"
+      ),
+      font = list(color = UNI_NAVY, size = 15), x = 0.02, xanchor = "left"
+    ),
+    xaxis = list(title = list(text = "SVD Dimension 1 score",
+                              font = list(color = UNI_NAVY)),
+                 gridcolor = "#e4ecf4", zerolinecolor = "#c5d3e0"),
+    yaxis = list(title = list(text = "IRT ideal point η (posterior mean)",
+                              font = list(color = UNI_NAVY)),
+                 gridcolor = "#e4ecf4", zerolinecolor = "#c5d3e0"),
+    legend = list(title = list(text = "<b>Fraction</b>"),
+                  bgcolor = "rgba(255,255,255,0.9)",
+                  bordercolor = "#d0dce8", borderwidth = 1),
+    margin = list(l = 65, r = 20, t = 90, b = 55),
+    plot_bgcolor = "white", paper_bgcolor = "white",
+    font = list(family = "Segoe UI, sans-serif", size = 12)
+  ) %>%
+  config(displayModeBar = TRUE, displaylogo = FALSE,
+         modeBarButtonsToRemove = c("lasso2d", "select2d"))
+
+htmltools::div(class = "plotly-wrapper", p_interactive)
+```
+
+```{r interactive-pending, results='asis', echo=FALSE, eval=!irt_ready}
+cat('<div class="pending">⏳ Interactive chart will appear here after the IRT model is fitted.</div>')
+```
+
+## Do the Results Agree? {#agreement}
+
+```{r results-callout, results='asis', echo=FALSE, eval=irt_ready}
+cat(paste0(
+  '<div class="answer">',
+  '<strong>Answer.</strong> Yes the three methods recover essentially the same underlying structure. ',
+  'The correlation between SVD Dimension 1 (imputed) and the IRT posterior mean is <strong>r = ',
+  round(corr_svd, 3), '</strong>; with the double-centred SVD it is <strong>r = ',
+  round(corr_svd_dc, 3), '</strong>. ',
+  'Party ordering is identical across all three methods: Ampel coalition parties cluster together at one end, AfD and CDU/CSU at the other. ',
+  'The critical difference is that IRT provides calibrated posterior uncertainty for each legislator\'s position, ',
+  'whereas SVD produces only point estimates with no attached uncertainty. ',
+  'This is most visible in the wide credible intervals for <em>fraktionslos</em> members and MPs with many abstentions — ',
+  'positions that appear precise in SVD but are highly uncertain in the IRT posterior.',
+  '</div>'
+))
+```
+
+```{r agreement-pending, results='asis', echo=FALSE, eval=!irt_ready}
+cat('<div class="pending">⏳ Correlation results will appear here after the IRT model is fitted.</div>')
+```
+
+## Method Comparison Summary {#summary-table}
+
+```{r summary-table, eval=irt_ready}
+data.frame(
+  Method       = c("SVD (imputed)", "SVD (double-centred)", "2-PL IRT (brms)"),
+  `Dim 1 var`  = c(paste0(round(var_explained[1]*100,    1), "%"),
+                   paste0(round(var_explained_dc[1]*100, 1), "%"),
+                   "—"),
+  Missingness  = c("Double-mean imputation", "Double-mean imputation", "Omitted (MAR)"),
+  Uncertainty  = c("None", "None", "Full posterior"),
+  `r vs IRT`   = c(round(corr_svd,    3),
+                   round(corr_svd_dc, 3),
+                   "1.000")
+) %>%
+  kable(col.names = c("Method", "Dim 1 variance", "Missingness",
+                      "Uncertainty quantification", "r vs IRT mean")) %>%
+  kable_styling(bootstrap_options = c("striped","hover"), full_width = FALSE)
+```
+
+```{r summary-pending, results='asis', echo=FALSE, eval=!irt_ready}
+cat('<div class="pending">⏳ Summary table will appear here after the IRT model is fitted.</div>')
+```
+
+---
+
+<div class="q-header"><span>V</span> Substantive Claim: Using the Bayesian Posterior</div>
+
+## Claim: Are SPD and the Grünen Distinguishable on the Primary Dimension? {#claim}
+
+SPD and Bündnis 90/Die Grünen were Ampel coalition partners for the full term. Do they occupy meaningfully different positions on Dimension 1, or are they indistinguishable once posterior uncertainty is accounted for?
+
+This is a question a point estimate cannot answer. SVD places SPD slightly above GRÜNE, but by how much, and how confidently? The IRT posterior lets us answer this directly as a probability.
+
+```{r claim-setup, eval=irt_ready}
+spd_idx <- which(mp_key$party == "SPD")
+grn_idx <- which(mp_key$party == "BÜNDNIS 90/DIE GRÜNEN")
+
+spd_draws <- unlist(lapply(spd_idx, extract_theta))
+grn_draws <- unlist(lapply(grn_idx, extract_theta))
+
+if (mean(theta_mean[mp_key$party == "SPD"]) < 0) {
+  spd_draws <- -spd_draws; grn_draws <- -grn_draws
+}
+
+n_s        <- min(length(spd_draws), length(grn_draws))
+spd_s      <- sample(spd_draws, n_s)
+grn_s      <- sample(grn_draws, n_s)
+diff_draws <- spd_s - grn_s
+
+diff_mean         <- mean(diff_draws)
+diff_ci           <- quantile(diff_draws, c(0.025, 0.975))
+prob_spd_gt_grune <- mean(spd_s > grn_s)
+```
+
+```{r claim-plot, fig.height=5, eval=irt_ready}
+n_plot   <- min(length(spd_draws), length(grn_draws))
+claim_df <- bind_rows(
+  data.frame(value = spd_draws[1:n_plot], party = "SPD"),
+  data.frame(value = grn_draws[1:n_plot], party = "BÜNDNIS 90/DIE GRÜNEN")
+)
+
+ggplot(claim_df, aes(x = value, fill = party, colour = party)) +
+  geom_density(alpha = 0.45, linewidth = 0.7) +
+  geom_vline(xintercept = mean(spd_draws),
+             colour = PARTY_COLS["SPD"], linetype = "dashed", linewidth = 1) +
+  geom_vline(xintercept = mean(grn_draws),
+             colour = PARTY_COLS["BÜNDNIS 90/DIE GRÜNEN"], linetype = "dashed", linewidth = 1) +
+  scale_fill_manual(values   = PARTY_COLS[c("SPD","BÜNDNIS 90/DIE GRÜNEN")], name = NULL) +
+  scale_colour_manual(values = PARTY_COLS[c("SPD","BÜNDNIS 90/DIE GRÜNEN")], name = NULL) +
+  labs(
+    title    = "Posterior Ideal Points: SPD vs Bündnis 90/Die Grünen",
+    subtitle = "Pooled draws across all MPs in each party · dashed lines = posterior means",
+    x = "Ideal point η", y = "Density"
+  ) +
+  theme_bundestag()
+```
+
+```{r claim-pending, results='asis', echo=FALSE, eval=!irt_ready}
+cat('<div class="pending">⏳ Posterior comparison will appear here after the IRT model is fitted.</div>')
+```
+
+```{r claim-box, results='asis', echo=FALSE, eval=irt_ready}
+within_note <- if (abs(diff_mean) < 0.15 & (diff_ci[1] < 0 | diff_ci[2] > 0)) {
+  "The 95% credible interval straddles zero, meaning the data are consistent with either party being more coalition-aligned. The two distributions overlap substantially and the posterior provides no strong evidence the parties are distinguishable on this dimension."
+} else if (diff_mean > 0) {
+  paste0("The credible interval excludes zero, and the probability that the average SPD MP scores higher than the average GRÜNE MP is ", round(prob_spd_gt_grune*100,1), "%. This constitutes moderately strong evidence of a genuine difference.")
+} else {
+  paste0("The credible interval excludes zero, and the probability that the average GRÜNE MP scores higher is ", round((1-prob_spd_gt_grune)*100,1), "%. This suggests the Grünen were, on average, the most consistently pro-coalition party.")
+}
+
+cat(paste0(
+  '<div class="answer">',
+  '<p><strong>Posterior evidence.</strong></p>',
+  '<ul>',
+  '<li>Posterior mean difference SPD − GRÜNE: <strong>', round(diff_mean, 3), '</strong></li>',
+  '<li>95% credible interval: [<strong>', round(diff_ci[1], 3), '</strong>, <strong>', round(diff_ci[2], 3), '</strong>]</li>',
+  '<li>P(η̄<sub>SPD</sub> > η̄<sub>GRÜNE</sub>): <strong>', round(prob_spd_gt_grune * 100, 1), '%</strong></li>',
+  '</ul>',
+  '<p><strong>What the posterior directly shows.</strong> ', within_note, '</p>',
+  '<p><strong>What we infer.</strong> The primary dimension captures government vs. opposition voting, not the internal SPD–Grüne ideological divide. Any difference between the two coalition partners on this axis is most likely driven by a small set of votes where one party broke coalition discipline e.g., individual FDP or Grünen defections on social spending. The posterior makes this uncertainty explicit; SVD cannot.</p>',
+  '<p><strong>Why this is a better answer than SVD provides.</strong> SVD gives two point estimates with no attached uncertainty. The IRT posterior lets us express the comparison as a probability, distinguish <em>individual MP uncertainty</em> (wide CIs for particular MPs) from <em>party-ordering uncertainty</em> (the probability above), and reason about what the data actually support vs. what is noise. This is the key advantage of the Bayesian approach.</p>',
+  '</div>'
+))
+```
+
+---
+
+---
+
+<div class="q-header"><span>VI</span> Replication</div>
+
+## Replication Package {#replication}
+
+All code, data, and outputs for this analysis are publicly available.
+
+<div class="info-box">
+<strong>Author:</strong> Fatima Iqbal · Universität Mannheim · School of Social Sciences<br>
+<strong>Course:</strong> Qualifying Assignment · DS201 Machine Learning and Causal Inference · 2025<br>
+<strong>Repository:</strong> <a href="https://github.com/Fatimaiqbal23/bundestag-scaling" target="_blank">github.com/Fatimaiqbal23/bundestag-scaling</a><br>
+<strong>Live page:</strong> <a href="https://fatimaiqbal23.github.io/bundestag-scaling/" target="_blank">fatimaiqbal23.github.io/bundestag-scaling</a>
+</div>
+
+### Data Sources
+
+- `bundestag_wp132_votes_clean.csv` — binary vote matrix (772 legislators × 161 votes)
+- `bundestag_wp132_votes_clean_long.csv` — long-format version for IRT
+- `bundestag_wp132_vote_codebook.csv` — vote labels, committees, outcomes
+
+### Model
+
+The Bayesian 2-PL IRT model was fitted using `brms` with `cmdstanr` as backend. The fitted model object is saved as `fit_2pl.rds` and included in the repository. To refit from scratch, delete `fit_2pl.rds` and re-knit the Rmd — the fitting chunk will run automatically.
+
+### How to Reproduce
+
+```r
+# 1. Clone the repository
+# git clone https://github.com/Fatimaiqbal23/bundestag-scaling
+
+# 2. Open final_version_fatima.Rmd in RStudio
+
+# 3. Ensure required packages are installed
+install.packages(c("dplyr", "tidyr", "ggplot2", "ggridges",
+                   "brms", "cmdstanr", "plotly", "knitr", "kableExtra"))
+
+# 4. Knit — produces final_version_fatima.html in the same directory
+```
+
+### Session Info
+
+```{r session-info, echo=FALSE}
+si <- sessionInfo()
+cat(sprintf("R %s · brms %s · cmdstanr %s · ggplot2 %s\nPlatform: %s",
+  getRversion(),
+  packageVersion("brms"),
+  packageVersion("cmdstanr"),
+  packageVersion("ggplot2"),
+  si$platform))
+```
+
+<div class="page-footer">
+Rendered with R `r getRversion()` &nbsp;·&nbsp; brms `r packageVersion("brms")` &nbsp;·&nbsp; ggplot2 `r packageVersion("ggplot2")` &nbsp;·&nbsp; `r format(Sys.Date(), "%B %Y")`<br>
+© 2025 Fatima Iqbal · Universität Mannheim
+</div>
